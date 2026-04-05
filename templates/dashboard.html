@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BondSync | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body class="p-6 md:p-12">
+
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-10">
+        <h1 class="text-3xl font-bold heading-gradient">❤️ BondSync</h1>
+        <button onclick="logout()" class="btn-secondary px-6 py-2 rounded-xl font-medium">Log out</button>
+    </header>
+
+    <!-- Loader -->
+    <div id="loader" class="flex justify-center items-center py-20 hidden">
+        <div class="heart-spinner text-6xl">❤️</div>
+    </div>
+
+    <!-- Setup Section (if no couple) -->
+    <div id="setup-section" class="max-w-2xl mx-auto glass-panel p-10 mt-10 hidden">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 text-center">Let's Connect Your Bond</h2>
+        <p class="text-center text-gray-600 mb-8">Create a new couple code or join your partner.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Create Couple -->
+            <div class="p-6 border rounded-2xl text-center bg-white/50">
+                <h3 class="text-xl font-bold text-gray-700">Create New</h3>
+                <p class="text-sm text-gray-500 my-4">Generate a unique ID for your partner to join.</p>
+                <button onclick="createCouple()" class="btn-primary px-6 py-3 rounded-xl w-full">Generate ID</button>
+            </div>
+
+            <!-- Join Couple -->
+            <div class="p-6 border rounded-2xl text-center bg-white/50">
+                <h3 class="text-xl font-bold text-gray-700">Join Partner</h3>
+                <p class="text-sm text-gray-500 my-4">Enter the code your partner gave you.</p>
+                <input type="text" id="join-code" placeholder="Couple Code" class="input-field text-center">
+                <button onclick="joinCouple()" class="btn-primary px-6 py-3 rounded-xl w-full mt-2">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Waiting Section (if partner hasn't joined) -->
+    <div id="waiting-section" class="max-w-xl mx-auto glass-panel p-10 mt-10 text-center hidden">
+        <div class="text-5xl floating mb-4">⌛</div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Waiting for your partner...</h2>
+        <p class="text-gray-600 mb-6">Share this code with them to connect:</p>
+        <div class="bg-gray-100 p-4 rounded-xl text-2xl font-mono tracking-widest text-[#9D4EDD] font-bold"
+            id="waiting-code"></div>
+        <button onclick="checkStatus()" class="mt-6 btn-secondary px-6 py-2 rounded-xl">Check Again</button>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-section" class="hidden max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Left Column: Insights & actions -->
+        <div class="lg:col-span-1 space-y-6">
+
+            <!-- AI Bond Score -->
+            <div
+                class="glass-panel p-8 text-center bg-gradient-to-br from-[#FF4D6D]/10 to-[#9D4EDD]/10 relative overflow-hidden">
+                <h3 class="text-lg text-gray-700 font-semibold mb-2">Bond Score</h3>
+                <div class="text-6xl font-bold heading-gradient mb-2" id="bond-score">--</div>
+                <p class="text-sm text-gray-600 mb-4" id="emotional-compat">Analyzing...</p>
+                <button onclick="fetchAnalysis()"
+                    class="text-xs bg-white/50 px-3 py-1 rounded-full text-pink-600 hover:bg-white transition">Refresh
+                    AI Analysis</button>
+            </div>
+
+            <!-- AI Advice -->
+            <div class="glass-panel p-6">
+                <h3 class="font-bold text-gray-800 mb-2 flex items-center gap-2"><span>🧠</span> AI Insights</h3>
+                <p class="text-sm text-gray-600" id="ai-advice">Collecting data to generate insights.</p>
+                <div class="mt-4 pt-4 border-t border-gray-100/50">
+                    <span class="text-xs text-purple-600 font-semibold" id="communication-quality"></span>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="glass-panel p-6 space-y-3">
+                <h3 class="font-bold text-gray-800 mb-4">📝 Log Activity</h3>
+                <button onclick="showModal('memory-modal')"
+                    class="w-full text-left p-3 rounded-xl bg-white/60 hover:bg-white transition text-pink-600 font-medium">✨
+                    Add Memory</button>
+                <button onclick="showModal('conflict-modal')"
+                    class="w-full text-left p-3 rounded-xl bg-white/60 hover:bg-white transition text-purple-600 font-medium">🌧️
+                    Log Conflict</button>
+                <button onclick="showModal('weekly-modal')"
+                    class="w-full text-left p-3 rounded-xl bg-white/60 hover:bg-white transition text-blue-600 font-medium">📅
+                    Weekly Check-in</button>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Data Visualization -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- graph -->
+            <div class="glass-panel p-6">
+                <h3 class="font-bold text-gray-800 mb-4">Conflict Frequency Trend</h3>
+                <canvas id="conflictChart" height="100"></canvas>
+            </div>
+
+            <!-- Memories Highlights -->
+            <div class="glass-panel p-6">
+                <h3 class="font-bold text-gray-800 mb-4">Recent Memories</h3>
+                <div id="memories-list" class="space-y-4">
+                    <!-- Inject memory html here -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Memory Modal -->
+    <div id="memory-modal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50">
+        <div class="glass-panel p-8 w-full max-w-md bg-white">
+            <h3 class="text-xl font-bold mb-4">Add a Special Memory</h3>
+            <input type="text" id="memory-title" placeholder="Title" class="input-field">
+            <textarea id="memory-desc" placeholder="What happened?" class="input-field mt-2 h-24"></textarea>
+            <select id="memory-emotion" class="input-field mt-2">
+                <option value="Happy">Happy 😊</option>
+                <option value="Romantic">Romantic 💖</option>
+                <option value="Surprised">Surprised 😲</option>
+                <option value="Peaceful">Peaceful 🌅</option>
+            </select>
+            <div class="flex gap-4 mt-6">
+                <button onclick="hideModal('memory-modal')"
+                    class="flex-1 py-2 rounded-xl text-gray-500 hover:bg-gray-100">Cancel</button>
+                <button onclick="submitMemory()" class="flex-1 btn-primary py-2 rounded-xl">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conflict Modal -->
+    <div id="conflict-modal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50">
+        <div class="glass-panel p-8 w-full max-w-md bg-white">
+            <h3 class="text-xl font-bold mb-4">Log Conflict</h3>
+            <input type="text" id="conflict-reason" placeholder="What was the reason?" class="input-field">
+            <label class="block text-sm text-gray-500 mt-4 mb-1">Severity (1-5)</label>
+            <input type="range" id="conflict-severity" min="1" max="5" value="3" class="w-full mb-4">
+            <label class="flex items-center gap-2 mt-2">
+                <input type="checkbox" id="conflict-resolved"> Resolved
+            </label>
+            <div class="flex gap-4 mt-6">
+                <button onclick="hideModal('conflict-modal')"
+                    class="flex-1 py-2 rounded-xl text-gray-500 hover:bg-gray-100">Cancel</button>
+                <button onclick="submitConflict()" class="flex-1 btn-primary py-2 rounded-xl">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Modal -->
+    <div id="weekly-modal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50">
+        <div class="glass-panel p-8 w-full max-w-md bg-white">
+            <h3 class="text-xl font-bold mb-4">Weekly Check-in</h3>
+            <select id="weekly-mood" class="input-field">
+                <option value="Amazing">Amazing</option>
+                <option value="Good">Good</option>
+                <option value="Okay">Okay</option>
+                <option value="Stressed">Stressed</option>
+            </select>
+            <label class="flex items-center gap-2 mt-4 text-sm">
+                <input type="checkbox" id="weekly-conflict"> Any conflicts this week?
+            </label>
+            <div class="flex gap-4 mt-6">
+                <button onclick="hideModal('weekly-modal')"
+                    class="flex-1 py-2 rounded-xl text-gray-500 hover:bg-gray-100">Cancel</button>
+                <button onclick="submitWeekly()" class="flex-1 btn-primary py-2 rounded-xl">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const headers = { 'Authorization': `Bearer ${token}` };
+            if (body) {
+                headers['Content-Type'] = 'application/json';
+            }
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+
+            const res = await fetch(`/api/${endpoint}`, options);
+            if (res.status === 401) {
+                logout();
+            }
+            return res.json();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+
+        // Modal logic
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // State Tracking
+        let currentUser = null;
+
+        async function init() {
+            document.getElementById('loader').classList.remove('hidden');
+            currentUser = await apiCall('auth/me');
+            document.getElementById('loader').classList.add('hidden');
+
+            if (!currentUser.couple_id) {
+                document.getElementById('setup-section').classList.remove('hidden');
+            } else if (!currentUser.has_partner) {
+                document.getElementById('waiting-code').innerText = currentUser.couple_id;
+                document.getElementById('waiting-section').classList.remove('hidden');
+            } else {
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                loadDashboardData();
+            }
+        }
+
+        async function createCouple() {
+            const res = await apiCall('auth/create-couple', 'POST');
+            if (res.couple_id) location.reload();
+        }
+
+        async function joinCouple() {
+            const id = document.getElementById('join-code').value;
+            if (!id) return;
+            const res = await apiCall('auth/join-couple', 'POST', { couple_id: id });
+            if (res.couple_id) location.reload();
+            else alert(res.detail || "Error joining");
+        }
+
+        function checkStatus() {
+            location.reload();
+        }
+
+        // Main App Logic
+        let chartInstance = null;
+
+        async function loadDashboardData() {
+            const memories = await apiCall('data/memories');
+            const conflicts = await apiCall('data/conflicts');
+
+            // Populate Memories
+            const list = document.getElementById('memories-list');
+            if (memories.length === 0) list.innerHTML = "<p class='text-gray-500 italic'>No memories yet. Add your first one above!</p>";
+            else {
+                list.innerHTML = memories.slice(0, 5).map(m => `
+            <div class="p-4 bg-white/40 rounded-xl border border-gray-100 flex justify-between items-center">
+              <div>
+                <h4 class="font-bold text-gray-800">${m.title}</h4>
+                <p class="text-sm text-gray-500">${m.description}</p>
+              </div>
+              <span class="bg-pink-100 text-pink-800 text-xs px-3 py-1 rounded-full">${m.emotion}</span>
+            </div>
+          `).join('');
+            }
+
+            // Populate Chart
+            const dates = conflicts.map(c => new Date(c.date).toLocaleDateString()).reverse();
+            const severities = conflicts.map(c => c.severity).reverse();
+
+            const ctx = document.getElementById('conflictChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates.length > 0 ? dates : ['No Data'],
+                    datasets: [{
+                        label: 'Conflict Severity',
+                        data: severities.length > 0 ? severities : [0],
+                        borderColor: '#9D4EDD',
+                        backgroundColor: 'rgba(157, 78, 221, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    scales: { y: { min: 0, max: 5 } }
+                }
+            });
+
+            // Try fetching AI Analysis
+            fetchAnalysis();
+        }
+
+        async function fetchAnalysis() {
+            document.getElementById('ai-advice').innerText = "Analyzing recent data with Gemini...";
+            const analysis = await apiCall('analysis/bond-score');
+            if (analysis && analysis.bond_score !== undefined) {
+                document.getElementById('bond-score').innerText = analysis.bond_score;
+                document.getElementById('emotional-compat').innerText = "Compatibility: " + analysis.emotional_compatibility;
+                document.getElementById('ai-advice').innerText = analysis.advice;
+                document.getElementById('communication-quality').innerText = "Communication: " + analysis.communication_quality;
+            } else {
+                document.getElementById('ai-advice').innerText = "Analysis failed or needs more data.";
+            }
+        }
+
+        // Input handlers
+        async function submitMemory() {
+            const title = document.getElementById('memory-title').value;
+            const desc = document.getElementById('memory-desc').value;
+            const em = document.getElementById('memory-emotion').value;
+            if (!title) return;
+            await apiCall('data/add-memory', 'POST', { title, description: desc, emotion: em });
+            hideModal('memory-modal');
+            loadDashboardData();
+        }
+
+        async function submitConflict() {
+            const reason = document.getElementById('conflict-reason').value;
+            const sev = parseInt(document.getElementById('conflict-severity').value);
+            const resolved = document.getElementById('conflict-resolved').checked;
+            if (!reason) return;
+            await apiCall('data/add-conflict', 'POST', { reason, severity: sev, resolved });
+            hideModal('conflict-modal');
+            loadDashboardData();
+        }
+
+        async function submitWeekly() {
+            const mood = document.getElementById('weekly-mood').value;
+            const conf = document.getElementById('weekly-conflict').checked;
+            await apiCall('data/add-weekly-check', 'POST', { mood, conflict_status: conf });
+            hideModal('weekly-modal');
+            loadDashboardData();
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

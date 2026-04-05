@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BondSync | Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+  <div class="glass-panel p-10 max-w-md w-full mx-4 animate-fade-in">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold heading-gradient flex items-center justify-center gap-2">
+        <span class="heart-spinner">❤️</span> BondSync
+      </h1>
+      <p class="text-gray-600 mt-2">Emotional intelligence for your relationship</p>
+    </div>
+
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Username</label>
+        <input type="text" id="username" class="input-field" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Password</label>
+        <input type="password" id="password" class="input-field" required>
+      </div>
+
+      <p id="error-msg" class="text-red-500 text-sm hidden"></p>
+
+      <button type="submit" class="btn-primary w-full py-3 rounded-xl font-semibold mt-4">
+        Log In
+      </button>
+    </form>
+    
+    <p class="text-center text-sm text-gray-600 mt-6">
+      Don't have an account? <a href="/signup" class="text-pink-500 font-semibold hover:underline">Sign up</a>
+    </p>
+  </div>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errMsg = document.getElementById('error-msg');
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            'username': username,
+            'password': password
+          })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          localStorage.setItem('token', data.access_token);
+          window.location.href = '/dashboard';
+        } else {
+          errMsg.textContent = data.detail || 'Login failed';
+          errMsg.classList.remove('hidden');
+        }
+      } catch (error) {
+        errMsg.textContent = 'Server error. Try again.';
+        errMsg.classList.remove('hidden');
+      }
+    });
+
+    // Auto redirect if already logged in
+    if(localStorage.getItem('token')) {
+        window.location.href = '/dashboard';
+    }
+  </script>
+</body>
+</html>

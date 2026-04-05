@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BondSync | Sign Up</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body class="flex items-center justify-center min-h-screen">
+
+    <div class="glass-panel p-10 max-w-md w-full mx-4 animate-fade-in" style="animation-delay: 0.1s;">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold heading-gradient flex items-center justify-center gap-2">
+                <span class="heart-spinner">✨</span> Create Account
+            </h1>
+            <p class="text-gray-600 mt-2">Start your journey with BondSync</p>
+        </div>
+
+        <form id="signup-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Username</label>
+                <input type="text" id="username" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="password" class="input-field" required>
+            </div>
+
+            <p id="error-msg" class="text-red-500 text-sm hidden"></p>
+
+            <button type="submit" class="btn-primary w-full py-3 rounded-xl font-semibold mt-4">
+                Sign Up
+            </button>
+        </form>
+
+        <p class="text-center text-sm text-gray-600 mt-6">
+            Already have an account? <a href="/login" class="text-purple-500 font-semibold hover:underline">Log in</a>
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errMsg = document.getElementById('error-msg');
+
+            try {
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    window.location.href = '/dashboard';
+                } else {
+                    errMsg.textContent = data.detail || 'Signup failed';
+                    errMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                errMsg.textContent = 'Server error. Try again.';
+                errMsg.classList.remove('hidden');
+            }
+        });
+
+        if (localStorage.getItem('token')) {
+            window.location.href = '/dashboard';
+        }
+    </script>
+</body>
+
+</html>
