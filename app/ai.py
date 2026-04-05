@@ -6,8 +6,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
     genai.configure(api_key=GEMINI_API_KEY)
 
-# Use newer gemini model per docs, standard is gemini-pro or gemini-1.5-pro    
-model = genai.GenerativeModel("gemini-1.5-pro-latest")
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 def analyze_relationship(memories, conflicts, weekly_checks):
     prompt = f"""
